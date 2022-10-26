@@ -13,7 +13,6 @@ import (
 )
 
 var Patient = gofhir.Patient{
-	ID:   "test_id",
 	Name: "test_name",
 }
 
