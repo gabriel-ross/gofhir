@@ -30,9 +30,6 @@ func TestCRUD(t *testing.T) {
 	_, err = client.List(ctx)
 	assert.Nil(t, err)
 
-	_, err = client.Read(ctx, Patient.ID)
-	assert.Nil(t, err)
-
 	err = client.Delete(ctx, Patient.ID)
 	assert.Nil(t, err)
 
