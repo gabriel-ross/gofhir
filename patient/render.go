@@ -32,3 +32,11 @@ func NewPatientResponseList(patients []gofhir.Patient) []render.Renderer {
 	}
 	return list
 }
+
+type patientResponse struct{}
+
+type ResponseService struct{}
+
+func (r *ResponseService) WriteResponse() {}
+
+func (r *ResponseService) WriteListResponse() {}

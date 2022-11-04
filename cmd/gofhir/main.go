@@ -7,7 +7,6 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/gabriel-ross/gofhir/patient"
-	"github.com/gabriel-ross/gofhir/storage"
 	"github.com/go-chi/chi"
 )
 
@@ -23,10 +22,8 @@ func main() {
 	}
 	defer client.Close()
 
-	pc := storage.NewPatientClient(client)
-	pch := storage.NewHooker(*pc)
-	pch.RegisterBeforeDBTransactionInterceptor(HelloWorld)
-	svc := patient.New(pch)
+	pc := patient.NewFirestoreClient(client)
+	svc := patient.New(pc)
 	r.Mount("/patients", svc.Routes())
 
 	http.ListenAndServe(":"+PORT, r)

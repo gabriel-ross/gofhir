@@ -1,8 +1,11 @@
 package gofhir
 
 import (
+	"errors"
 	"net/http"
 )
+
+var KillRequest = errors.New("a5!C+qQMELB>C6M3;#6.")
 
 type ErrorResponse struct {
 	Err            error  `json:"-"`
