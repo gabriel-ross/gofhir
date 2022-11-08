@@ -4,31 +4,81 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 
-	"cloud.google.com/go/firestore"
-	"github.com/gabriel-ross/gofhir/patient"
 	"github.com/go-chi/chi"
+	"github.com/joho/godotenv"
+	"github.com/segmentio/kafka-go"
 )
 
-var PROJECT_ID = "gofhir"
-var PORT = "8080"
+var PROJECT_ID string
+var PORT string
 
 func main() {
+	var err error
+	LoadConfigFromEnvironment()
 	r := chi.NewRouter()
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, PROJECT_ID)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-	}
-	defer client.Close()
 
-	pc := patient.NewFirestoreClient(client)
-	svc := patient.New(pc)
-	r.Mount("/patients", svc.Routes())
+	// fsClient, err := firestore.NewClient(ctx, PROJECT_ID)
+	// if err != nil {
+	// 	log.Fatalf("Failed to create client: %v", err)
+	// 	return
+	// }
+	// defer fsClient.Close()
+
+	// clClient, err := gofhir.NewCloudLoggerClient(ctx, PROJECT_ID)
+	// if err != nil {
+	// 	log.Fatalf("Failed to create client: %v", err)
+	// 	return
+	// }
+	// defer clClient.Close()
+
+	kafkaWriter := &kafka.Writer{
+		Addr:                   kafka.TCP("localhost:9092"),
+		Topic:                  "requests",
+		AllowAutoTopicCreation: true,
+		Balancer:               &kafka.LeastBytes{},
+	}
+
+	err = kafkaWriter.WriteMessages(ctx,
+		kafka.Message{
+			Key:   []byte("some key"),
+			Value: []byte("some value"),
+		},
+	)
+	if err != nil {
+		log.Fatalf("failed to write messages: %v", err)
+		return
+	}
+
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		err = kafkaWriter.WriteMessages(ctx,
+			kafka.Message{
+				Key:   []byte(""),
+				Value: []byte(r.RemoteAddr),
+			},
+		)
+		if err != nil {
+			log.Fatalf("failed to write request to kafka: %v", err)
+		}
+	})
 
 	http.ListenAndServe(":"+PORT, r)
 }
 
-func HelloWorld() {
-	log.Println("hello world")
+func LoadConfigFromEnvironment() {
+	godotenv.Load(".env")
+	PROJECT_ID = os.Getenv("PROJECT_ID")
+	PORT = os.Getenv("PORT")
+
+	// Default value if not set
+	if PORT == "" {
+		PORT = "8080"
+	}
+}
+
+type Config struct {
+	PROJECT_ID string `env:"PROJECT_ID" required:"true" default:"-"`
+	PORT       string `env:"PORT" required:"false" default:"8080"`
 }
