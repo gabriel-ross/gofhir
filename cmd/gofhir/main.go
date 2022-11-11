@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"os"
 
+	"cloud.google.com/go/firestore"
+	"github.com/gabriel-ross/gofhir"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
-	"github.com/segmentio/kafka-go"
 )
 
 var PROJECT_ID string
@@ -20,49 +21,21 @@ func main() {
 	r := chi.NewRouter()
 	ctx := context.Background()
 
-	// fsClient, err := firestore.NewClient(ctx, PROJECT_ID)
-	// if err != nil {
-	// 	log.Fatalf("Failed to create client: %v", err)
-	// 	return
-	// }
-	// defer fsClient.Close()
-
-	// clClient, err := gofhir.NewCloudLoggerClient(ctx, PROJECT_ID)
-	// if err != nil {
-	// 	log.Fatalf("Failed to create client: %v", err)
-	// 	return
-	// }
-	// defer clClient.Close()
-
-	kafkaWriter := &kafka.Writer{
-		Addr:                   kafka.TCP("localhost:9092"),
-		Topic:                  "requests",
-		AllowAutoTopicCreation: true,
-		Balancer:               &kafka.LeastBytes{},
-	}
-
-	err = kafkaWriter.WriteMessages(ctx,
-		kafka.Message{
-			Key:   []byte("some key"),
-			Value: []byte("some value"),
-		},
-	)
+	fsClient, err := firestore.NewClient(ctx, PROJECT_ID)
 	if err != nil {
-		log.Fatalf("failed to write messages: %v", err)
+		log.Fatalf("Failed to create client: %v", err)
 		return
 	}
+	defer fsClient.Close()
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		err = kafkaWriter.WriteMessages(ctx,
-			kafka.Message{
-				Key:   []byte(""),
-				Value: []byte(r.RemoteAddr),
-			},
-		)
-		if err != nil {
-			log.Fatalf("failed to write request to kafka: %v", err)
-		}
-	})
+	clClient, err := gofhir.NewCloudLoggerClient(ctx, PROJECT_ID)
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+		return
+	}
+	defer clClient.Close()
+
+	// logger := clClient.Logger("default").StandardLogger(logging.Info)
 
 	http.ListenAndServe(":"+PORT, r)
 }
