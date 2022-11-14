@@ -5,6 +5,8 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type FirestoreClient struct {
@@ -23,27 +25,21 @@ func NewFirestoreClient(ctx context.Context, projectID string) (_ *FirestoreClie
 	}, nil
 }
 
+func (fc *FirestoreClient) Exists(ctx context.Context, collectionPath string, id string) (_ bool, err error) {
+	_, err = fc.Client.Collection(collectionPath).Doc(id).Get(ctx)
+	if status.Code(err) == codes.NotFound {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Set sets the document at a given id to the given data. If no document
 // exists at this id a new one will be created.
 func (fc *FirestoreClient) Set(ctx context.Context, collectionPath string, id string, data interface{}, options ...firestore.SetOption) (_ interface{}, err error) {
-	_, err = fc.Client.Collection(collectionPath).Doc(id).Set(ctx, data, options)
+	_, err = fc.Client.Collection(collectionPath).Doc(id).Set(ctx, data, options...)
 	return data, err
-}
-
-func (fc *FirestoreClient) List(ctx context.Context, collectionPath string, options ...func(*ListOptions)) (_ []interface{}, err error) {
-	resp := []interface{}{}
-	query := buildListQueryFromListOptions(fc.Client.Collection(collectionPath).Query, *newListOptions(options...))
-	iter := query.Documents(ctx)
-	for {
-		dsnap, done := iter.Next()
-		if done == iterator.Done {
-			break
-		}
-		var data interface{}
-		dsnap.DataTo(&data)
-		resp = append(resp, data)
-	}
-	return resp, nil
 }
 
 func (fc *FirestoreClient) Read(ctx context.Context, collectionPath string, id string) (_ interface{}, err error) {
@@ -61,6 +57,8 @@ func (fc *FirestoreClient) Delete(ctx context.Context, collectionPath, id string
 	return err
 }
 
+type operator string
+
 // Filter operators
 var (
 	Eq  operator = "=="
@@ -71,7 +69,21 @@ var (
 	Geq          = ">="
 )
 
-type operator string
+func (fc *FirestoreClient) List(ctx context.Context, collectionPath string, options ...func(*ListOptions)) (_ []interface{}, err error) {
+	resp := []interface{}{}
+	query := buildListQueryFromListOptions(fc.Client.Collection(collectionPath).Query, *newListOptions(options...))
+	iter := query.Documents(ctx)
+	for {
+		dsnap, done := iter.Next()
+		if done == iterator.Done {
+			break
+		}
+		var data interface{}
+		dsnap.DataTo(&data)
+		resp = append(resp, data)
+	}
+	return resp, nil
+}
 
 func buildListQueryFromListOptions(query firestore.Query, opts ListOptions) firestore.Query {
 
