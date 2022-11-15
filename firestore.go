@@ -71,7 +71,7 @@ var (
 
 func (fc *FirestoreClient) List(ctx context.Context, collectionPath string, options ...func(*ListOptions)) (_ []interface{}, err error) {
 	resp := []interface{}{}
-	query := buildListQueryFromListOptions(fc.Client.Collection(collectionPath).Query, *newListOptions(options...))
+	query := BuildListQueryFromListOptions(fc.Client.Collection(collectionPath).Query, *newListOptions(options...))
 	iter := query.Documents(ctx)
 	for {
 		dsnap, done := iter.Next()
@@ -85,7 +85,7 @@ func (fc *FirestoreClient) List(ctx context.Context, collectionPath string, opti
 	return resp, nil
 }
 
-func buildListQueryFromListOptions(query firestore.Query, opts ListOptions) firestore.Query {
+func BuildListQueryFromListOptions(query firestore.Query, opts ListOptions) firestore.Query {
 
 	// Add sort keys
 	for _, sortParam := range opts.sortParameters {
@@ -97,7 +97,12 @@ func buildListQueryFromListOptions(query firestore.Query, opts ListOptions) fire
 		query = query.Where(filterParam.key, string(filterParam.op), filterParam.val)
 	}
 
-	query = query.StartAt(opts.offset).Limit(opts.limit)
+	if opts.offset > -1 {
+		query = query.StartAt(opts.offset)
+	}
+	if opts.limit > -1 {
+		query = query.Limit(opts.limit)
+	}
 
 	return query
 }
