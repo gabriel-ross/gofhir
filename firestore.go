@@ -69,9 +69,9 @@ var (
 	Geq          = ">="
 )
 
-func (fc *FirestoreClient) List(ctx context.Context, collectionPath string, options ...func(*ListOptions)) (_ []interface{}, err error) {
+func (fc *FirestoreClient) List(ctx context.Context, collectionPath string, options ...ListOption)) (_ []interface{}, err error) {
 	resp := []interface{}{}
-	query := BuildListQueryFromListOptions(fc.Client.Collection(collectionPath).Query, *newListOptions(options...))
+	query := BuildListQueryFromListOptions(fc.Client.Collection(collectionPath).Query, options...)
 	iter := query.Documents(ctx)
 	for {
 		dsnap, done := iter.Next()
@@ -85,27 +85,31 @@ func (fc *FirestoreClient) List(ctx context.Context, collectionPath string, opti
 	return resp, nil
 }
 
-func BuildListQueryFromListOptions(query firestore.Query, opts ListOptions) firestore.Query {
+func BuildListQueryFromListOptions(query firestore.Query, options ...ListOption) firestore.Query {
 
-	// Add sort keys
-	for _, sortParam := range opts.sortParameters {
-		query = query.OrderBy(sortParam.key, sortParam.direction)
-	}
+	opts := newListOptions(options...)
 
 	// Add filter params
 	for _, filterParam := range opts.filterParameters {
 		query = query.Where(filterParam.key, string(filterParam.op), filterParam.val)
 	}
 
-	if opts.offset > -1 {
-		query = query.StartAt(opts.offset)
-	}
-	if opts.limit > -1 {
-		query = query.Limit(opts.limit)
-	}
+	// Add sort keys
+	// for _, sortParam := range opts.sortParameters {
+	// 	query = query.OrderBy(sortParam.key, sortParam.direction)
+	// }
+
+	// if opts.offset > -1 {
+	// 	query = query.StartAt(opts.offset)
+	// }
+	// if opts.limit > -1 {
+	// 	query = query.Limit(opts.limit)
+	// }
 
 	return query
 }
+
+type ListOption func(*ListOptions)
 
 type ListOptions struct {
 	limit            int
@@ -114,7 +118,7 @@ type ListOptions struct {
 	filterParameters []filterParameter
 }
 
-func newListOptions(opts ...func(*ListOptions)) *ListOptions {
+func newListOptions(opts ...ListOption) *ListOptions {
 	lo := &ListOptions{
 		limit:            100,
 		offset:           0,
@@ -127,13 +131,13 @@ func newListOptions(opts ...func(*ListOptions)) *ListOptions {
 	return lo
 }
 
-func WithLimit(limit int) func(*ListOptions) {
+func WithLimit(limit int) ListOption {
 	return func(l *ListOptions) {
 		l.limit = limit
 	}
 }
 
-func WithOffset(offset int) func(*ListOptions) {
+func WithOffset(offset int) ListOption {
 	return func(l *ListOptions) {
 		l.offset = offset
 	}
@@ -141,7 +145,7 @@ func WithOffset(offset int) func(*ListOptions) {
 
 // WithSortKey adds a sort key to the sort chain. Sort keys will be applied in
 // the order they are added. Max of two sort keys - any more will be ignored.
-func WithSortKey(key string, direction firestore.Direction) func(*ListOptions) {
+func WithSortKey(key string, direction firestore.Direction) ListOption {
 	return func(l *ListOptions) {
 		if len(l.sortParameters) < 2 {
 			l.sortParameters = append(l.sortParameters, sortParameter{
