@@ -1,0 +1,62 @@
+package {{.Lower}}
+
+import (
+	"context"
+
+	"cloud.google.com/go/firestore"
+	"github.com/gabriel-ross/gofhir"
+	"google.golang.org/api/iterator"
+)
+
+type StorageService struct {
+	client     *firestore.Client
+	collection string
+}
+
+func New{{.Upper}}Client(c *firestore.Client) *StorageService {
+	return &StorageService{
+		client:     c,
+		collection: "{{.Lower}}",
+	}
+}
+
+func (s *StorageService) Create(ctx context.Context, {{.Lower}} gofhir.{{.Upper}}) (_ gofhir.{{.Upper}}, err error) {
+	ref := s.client.Collection(s.collection).NewDoc()
+	{{.Lower}}.ID = ref.ID
+	_, err = s.client.Collection(s.collection).Doc(ref.ID).Set(ctx, {{.Lower}})
+	return {{.Lower}}, err
+}
+
+func (s *StorageService) List(ctx context.Context) (_ []gofhir.{{.Upper}}, err error) {
+	resp := []gofhir.{{.Upper}}{}
+	iter := s.client.Collection(s.collection).Documents(ctx)
+	for {
+		dsnap, done := iter.Next()
+		if done == iterator.Done {
+			break
+		}
+		var {{.Lower}} gofhir.{{.Upper}}
+		dsnap.DataTo(&{{.Lower}})
+		resp = append(resp, {{.Lower}})
+	}
+	return resp, nil
+}
+
+func (s *StorageService) Read(ctx context.Context, id string) (_ gofhir.{{.Upper}}, err error) {
+	var {{.Lower}} gofhir.{{.Upper}}
+	dsnap, err := s.client.Collection(s.collection).Doc(id).Get(ctx)
+	if err != nil {
+		return gofhir.{{.Upper}}{}, err
+	}
+	dsnap.DataTo(&{{.Lower}})
+	return {{.Lower}}, nil
+}
+
+func (s *StorageService) Update(ctx context.Context) (err error) {
+	return nil
+}
+
+func (s *StorageService) Delete(ctx context.Context, id string) (err error) {
+	_, err = s.client.Collection(s.collection).Doc(id).Delete(ctx)
+	return err
+}

@@ -1,4 +1,4 @@
-package {{.Package}}
+package {{.Lower}}
 
 import (
 	"context"
@@ -11,32 +11,32 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (svc *Service) create{{.Resource}}() http.HandlerFunc {
+func (svc *Service) create{{.Upper}}() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("{{.Resource}} create called"))
+		w.Write([]byte("{{.Upper}} create called"))
 	}
 }
 
-func (svc *Service) list{{.Resource}}s() http.HandlerFunc {
+func (svc *Service) list{{.Upper}}s() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("{{.Resource}} list called"))
+		w.Write([]byte("{{.Upper}} list called"))
 	}
 }
 
-func (svc *Service) get{{.Resource}}() http.HandlerFunc {
+func (svc *Service) get{{.Upper}}() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("{{.Resource}} get called"))
+		w.Write([]byte("{{.Upper}} get called"))
 	}
 }
 
-func (svc *Service) update{{.Resource}}() http.HandlerFunc {
+func (svc *Service) update{{.Upper}}() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("{{.Resource}} update called"))
+		w.Write([]byte("{{.Upper}} update called"))
 	}
 }
 
-func (svc *Service) delete{{.Resource}}() http.HandlerFunc {
+func (svc *Service) delete{{.Upper}}() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("{{.Resource}} delete called"))
+		w.Write([]byte("{{.Upper}} delete called"))
 	}
 }

@@ -1,0 +1,18 @@
+package {{.Lower}}
+
+import "github.com/go-chi/chi"
+
+func (svc *Service) Routes() chi.Router {
+	r := chi.NewRouter()
+
+	r.Post("/", svc.create{{.Upper}}())
+	r.Get("/", svc.list{{.Upper}}s())
+
+	r.Route("/{{.Lower}}_id}", func(r chi.Router) {
+		r.Get("/", svc.get{{.Upper}}())
+		r.Put("/", svc.update{{.Upper}}())
+		r.Delete("/", svc.delete{{.Upper}}())
+	})
+
+	return r
+}
