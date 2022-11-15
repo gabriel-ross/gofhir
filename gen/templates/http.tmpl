@@ -1,0 +1,42 @@
+package {{.Package}}
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/gabriel-ross/gofhir"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/render"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+func (svc *Service) create{{.Resource}}() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("{{.Resource}} create called"))
+	}
+}
+
+func (svc *Service) list{{.Resource}}s() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("{{.Resource}} list called"))
+	}
+}
+
+func (svc *Service) get{{.Resource}}() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("{{.Resource}} get called"))
+	}
+}
+
+func (svc *Service) update{{.Resource}}() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("{{.Resource}} update called"))
+	}
+}
+
+func (svc *Service) delete{{.Resource}}() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("{{.Resource}} delete called"))
+	}
+}
