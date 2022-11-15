@@ -69,7 +69,7 @@ var (
 	Geq          = ">="
 )
 
-func (fc *FirestoreClient) List(ctx context.Context, collectionPath string, options ...ListOption)) (_ []interface{}, err error) {
+func (fc *FirestoreClient) List(ctx context.Context, collectionPath string, options ...ListOption) (_ []interface{}, err error) {
 	resp := []interface{}{}
 	query := BuildListQueryFromListOptions(fc.Client.Collection(collectionPath).Query, options...)
 	iter := query.Documents(ctx)

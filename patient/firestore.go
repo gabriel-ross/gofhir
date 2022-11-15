@@ -27,9 +27,9 @@ func (c *firestoreService) Create(ctx context.Context, patient gofhir.Patient) (
 	return patient, err
 }
 
-func (c *firestoreService) List(ctx context.Context, opts gofhir.ListOptions) (_ []gofhir.Patient, err error) {
+func (c *firestoreService) List(ctx context.Context, options ...gofhir.ListOption) (_ []gofhir.Patient, err error) {
 	resp := []gofhir.Patient{}
-	query := gofhir.BuildListQuery(c.client.Collection(c.collection).Query, opts)
+	query := gofhir.BuildListQueryFromListOptions(c.client.Collection(c.collection).Query, options...)
 	iter := query.Documents(ctx)
 	for {
 		dsnap, done := iter.Next()

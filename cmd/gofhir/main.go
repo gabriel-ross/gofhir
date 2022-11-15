@@ -36,6 +36,19 @@ func main() {
 	defer clClient.Close()
 
 	// logger := clClient.Logger("default").StandardLogger(logging.Info)
+	// r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	data, _ := ioutil.ReadAll(r.Body)
+	// 	defer r.Body.Close()
+	// 	err = kafkaWriter.WriteMessages(ctx,
+	// 		kafka.Message{
+	// 			Key:   []byte(""),
+	// 			Value: data,
+	// 		},
+	// 	)
+	// 	if err != nil {
+	// 		log.Fatalf("failed to write request to kafka: %v", err)
+	// 	}
+	// })
 
 	http.ListenAndServe(":"+PORT, r)
 }
