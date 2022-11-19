@@ -34,8 +34,8 @@ func newService(name string) Service {
 	}
 }
 
-var SupportedServices = []string{"http", "routes", "storage"}
-var SupportedResources = []string{"foo"}
+var SupportedServices = []string{"http", "routes", "storage", "service"}
+var SupportedResources = []string{"foo", "bar"}
 
 func main() {
 
