@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+type Interceptor func(context.Context, QueryEvent, func(context.Context, QueryEvent))
+
+// Last interceptor in a chain still needs to be able to terminate -> need to wrap the calling function?
+
 type InterceptorManager struct {
 	onDatabaseTransaction []func(context.Context)
 }
