@@ -38,4 +38,66 @@ type QueryEvent struct {
 
 // might need some way to translate a database function into a query
 
-// Do I really need some way to link a database transaction to an http request? It's consuming a lot of brainpower
+// Need a way to link events to the same query. Not the http request and response writers, but maybe some event ID
+
+// Services take in some interface Hooker that looks like this that is a collection of sub-interfaces that it will need
+type ServiceHooker interface {
+	RequestHooker
+}
+
+type ServerHooker interface {
+	OnServerStartup(ServerEvent)
+	OnServerShutdown(ServerEvent)
+}
+
+type RequestHooker interface {
+	OnRequestReceived(RequestEvent)
+}
+
+type ResponseHooker interface {
+	OnServerResponse(ResponseEvent)
+}
+
+type DatabaseHooker interface {
+	BeforeDatabaseQuery(DatabaseEvent)
+}
+
+type ErrorHooker interface {
+	OnError(ErrorEvent)
+}
+
+type ServerEvent struct {
+	Timestamp time.Time
+}
+
+type RequestEvent struct {
+	RequestID string
+	Timestamp time.Time
+	Request   *http.Request
+}
+
+type ResponseEvent struct {
+	RequestID string
+	Timestamp time.Time
+}
+
+type DatabaseEvent struct {
+	RequestID string
+	Timestamp time.Time
+}
+
+type ErrorEvent struct {
+	RequestID string
+	Timestamp time.Time
+}
+
+// For now scrap endpoint-specific hooks
+
+// hooker struct is dependency of server.
+// do I need a hooker struct?
+//	- I think it would just house all the registered interceptor functions
+
+// What if I just start with implementing it on the endpoint level and seeing what code ends up being
+// redundant. From there I can just abstract it out. Need to stop trying to do it perfectly the first time
+// and be more okay with duplicate code and refactoring
+// lets use cloud hw as demo space.
