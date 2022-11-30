@@ -16,4 +16,7 @@
 
 # Environment 
 *.env
-*.md
+key.json
+
+# MacOS
+.DS_Store
