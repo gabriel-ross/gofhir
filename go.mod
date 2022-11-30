@@ -7,7 +7,6 @@ require github.com/go-chi/chi v1.5.4
 require (
 	cloud.google.com/go/firestore v1.8.0
 	cloud.google.com/go/logging v1.5.0
-	github.com/go-chi/render v1.0.2
 	github.com/joho/godotenv v1.4.0
 	google.golang.org/api v0.98.0
 	google.golang.org/grpc v1.49.0
@@ -16,7 +15,6 @@ require (
 require (
 	cloud.google.com/go v0.104.0 // indirect
 	cloud.google.com/go/compute v1.7.0 // indirect
-	github.com/ajg/form v1.5.1 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect

@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"cloud.google.com/go/firestore"
-	"github.com/gabriel-ross/gofhir"
+	"github.com/gabriel-ross/gofhir/interceptor"
+	"github.com/gabriel-ross/gofhir/patient"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 )
@@ -28,13 +30,20 @@ func main() {
 	}
 	defer fsClient.Close()
 
-	clClient, err := gofhir.NewCloudLoggerClient(ctx, PROJECT_ID)
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
-		return
+	demoInt := &interceptor.DemoInterceptor{
+		ReqLog:     map[string]time.Time{},
+		DbQueryLog: map[string]time.Time{},
 	}
-	defer clClient.Close()
 
+	p := patient.New(r, fsClient, "localhost:8080", "patients")
+	p.RegisterInterceptor(demoInt)
+
+	// clClient, err := gofhir.NewCloudLoggerClient(ctx, PROJECT_ID)
+	// if err != nil {
+	// 	log.Fatalf("Failed to create client: %v", err)
+	// 	return
+	// }
+	// defer clClient.Close()
 	// logger := clClient.Logger("default").StandardLogger(logging.Info)
 	// r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 	// 	data, _ := ioutil.ReadAll(r.Body)
@@ -50,6 +59,7 @@ func main() {
 	// 	}
 	// })
 
+	log.Println("Starting server on port: " + PORT)
 	http.ListenAndServe(":"+PORT, r)
 }
 

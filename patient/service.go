@@ -1,39 +1,55 @@
 package patient
 
 import (
-	"context"
-	"net/http"
+	"fmt"
+	"log"
 
-	"github.com/gabriel-ross/gofhir"
+	"cloud.google.com/go/firestore"
+	"github.com/gabriel-ross/gofhir/hook"
 	"github.com/go-chi/chi"
 )
 
-type Storer interface {
-	Create(context.Context, gofhir.Patient) (gofhir.Patient, error)
-	List(context.Context, gofhir.ListOptions) ([]gofhir.Patient, error)
-	Read(context.Context, string) (gofhir.Patient, error)
-	Update(context.Context, string, gofhir.Patient) (gofhir.Patient, error)
-	Delete(context.Context, string) error
-}
-
-type Renderer interface {
-	Render(http.ResponseWriter, *http.Request, gofhir.Patient, string, int, map[string]string) error
-	RenderList(http.ResponseWriter, *http.Request, []gofhir.Patient, string, int, map[string]string) error
-}
-
 type Service struct {
-	router   chi.Router
-	path     string
-	storer   Storer
-	renderer Renderer
+	router         chi.Router
+	db             *firestore.Client
+	absolutePath   string
+	requestCounter int
+
+	RequestInterceptors  []hook.RequestInterceptor
+	ResponseInterceptors []hook.ResponseInterceptor
+	DatabaseInterceptors []hook.DatabaseInterceptor
 }
 
-func New(storer Storer, renderer Renderer, path string, r chi.Router) *Service {
+// New mounts the User service router at baseURL+"/"+resourceSlug and returns
+// a point to the new service. Slug should not contain a leading slash and
+// baseURL should not contain a trailing slash.
+func New(router chi.Router, db *firestore.Client, baseURL, slug string) *Service {
 	svc := &Service{
-		path:   path,
-		storer: storer,
+		router:         router,
+		db:             db,
+		absolutePath:   fmt.Sprintf("%s/%s", baseURL, slug),
+		requestCounter: 0,
 	}
-	svc.router = svc.Routes()
-	r.Mount(path, svc.router)
+	router.Mount("/"+slug, svc.Routes())
 	return svc
+}
+
+func (svc *Service) NewRequestID() int {
+	svc.requestCounter++
+	return svc.requestCounter
+}
+
+func (svc *Service) RegisterInterceptor(i interface{}) {
+	if interceptor, ok := i.(hook.RequestInterceptor); ok {
+		log.Println("Successfully registered request interceptor")
+		svc.RequestInterceptors = append(svc.RequestInterceptors, interceptor)
+	}
+	if interceptor, ok := i.(hook.ResponseInterceptor); ok {
+		log.Println("Successfully registered response interceptor")
+		svc.ResponseInterceptors = append(svc.ResponseInterceptors, interceptor)
+	}
+	if interceptor, ok := i.(hook.DatabaseInterceptor); ok {
+		log.Println("Successfully registered database interceptor")
+		svc.DatabaseInterceptors = append(svc.DatabaseInterceptors, interceptor)
+	}
 }
