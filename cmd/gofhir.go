@@ -31,8 +31,10 @@ func main() {
 	defer fsClient.Close()
 
 	demoInt := &interceptor.DemoInterceptor{
-		ReqLog:     map[string]time.Time{},
-		DbQueryLog: map[string]time.Time{},
+		RequestTime:     map[string]time.Time{},
+		RequestDuration: map[string]int64{},
+		DbQueryTime:     map[string]time.Time{},
+		DbQueryDuration: map[string]int64{},
 	}
 
 	p := patient.New(r, fsClient, "localhost:8080", "patients")
