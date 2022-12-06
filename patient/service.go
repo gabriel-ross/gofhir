@@ -20,9 +20,9 @@ type Service struct {
 	DatabaseInterceptors []hook.DatabaseInterceptor
 }
 
-// New mounts the User service router at baseURL+"/"+resourceSlug and returns
-// a point to the new service. Slug should not contain a leading slash and
-// baseURL should not contain a trailing slash.
+// New returns a new User service and mounts it at "/slug". slug should
+// not contain a leading slash and baseURL should not contain a trailing
+// slash.
 func New(router chi.Router, db *firestore.Client, baseURL, slug string) *Service {
 	svc := &Service{
 		router:         router,
@@ -39,17 +39,19 @@ func (svc *Service) NewRequestID() int {
 	return svc.requestCounter
 }
 
-func (svc *Service) RegisterInterceptor(i interface{}) {
-	if interceptor, ok := i.(hook.RequestInterceptor); ok {
-		log.Println("Successfully registered request interceptor")
-		svc.RequestInterceptors = append(svc.RequestInterceptors, interceptor)
-	}
-	if interceptor, ok := i.(hook.ResponseInterceptor); ok {
-		log.Println("Successfully registered response interceptor")
-		svc.ResponseInterceptors = append(svc.ResponseInterceptors, interceptor)
-	}
-	if interceptor, ok := i.(hook.DatabaseInterceptor); ok {
-		log.Println("Successfully registered database interceptor")
-		svc.DatabaseInterceptors = append(svc.DatabaseInterceptors, interceptor)
+func (svc *Service) RegisterInterceptors(interceptors ...interface{}) {
+	for _, i := range interceptors {
+		if interceptor, ok := i.(hook.RequestInterceptor); ok {
+			log.Println("Successfully registered request interceptor")
+			svc.RequestInterceptors = append(svc.RequestInterceptors, interceptor)
+		}
+		if interceptor, ok := i.(hook.ResponseInterceptor); ok {
+			log.Println("Successfully registered response interceptor")
+			svc.ResponseInterceptors = append(svc.ResponseInterceptors, interceptor)
+		}
+		if interceptor, ok := i.(hook.DatabaseInterceptor); ok {
+			log.Println("Successfully registered database interceptor")
+			svc.DatabaseInterceptors = append(svc.DatabaseInterceptors, interceptor)
+		}
 	}
 }

@@ -1,7 +1,6 @@
 package patient
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -23,23 +22,15 @@ type listResponse struct {
 	Self   string     `json:"self"`
 }
 
-func (svc *Service) newResponse(p gofhir.Patient) response {
+func (svc *Service) newResponse(m gofhir.Patient) response {
 	return response{
-		ID:   p.ID,
-		Name: p.Name,
+		ID:   m.ID,
+		Name: m.Name,
 	}
 }
 
-func (svc *Service) RenderResponse(w http.ResponseWriter, r *http.Request, p gofhir.Patient, code int) {
-	resp := svc.newResponse(p)
-	body, err := json.Marshal(resp)
-	if err != nil {
-		gofhir.RenderError(w, r, http.StatusInternalServerError, err)
-		return
-	}
-
-	w.WriteHeader(code)
-	w.Write(body)
+func (svc *Service) RenderResponse(w http.ResponseWriter, r *http.Request, code int, u gofhir.Patient) {
+	gofhir.WriteResponse(w, r, code, svc.newResponse(u))
 }
 
 func (svc *Service) RenderListResponse(w http.ResponseWriter, r *http.Request, code int, users []gofhir.Patient, offset, limit, count int) {
@@ -63,14 +54,7 @@ func (svc *Service) RenderListResponse(w http.ResponseWriter, r *http.Request, c
 		resp.Next = fmt.Sprintf("%s?offset=%d&limit=%d", svc.absolutePath, offset+limit, limit)
 	}
 
-	body, err := json.Marshal(resp)
-	if err != nil {
-		gofhir.RenderError(w, r, http.StatusInternalServerError, err)
-		return
-	}
-
-	w.WriteHeader(code)
-	w.Write(body)
+	gofhir.WriteResponse(w, r, code, resp)
 }
 
 func max(x, y int) int {

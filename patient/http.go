@@ -2,7 +2,6 @@ package patient
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -36,7 +35,7 @@ func (svc *Service) handleCreate() http.HandlerFunc {
 
 		err = BindRequest(r, &data)
 		if err != nil {
-			gofhir.RenderError(w, r, http.StatusBadRequest, err)
+			gofhir.RenderError(w, r, http.StatusBadRequest, err, "%s", err.Error())
 			return
 		}
 
@@ -67,7 +66,7 @@ func (svc *Service) handleCreate() http.HandlerFunc {
 		}
 
 		if err != nil {
-			gofhir.RenderError(w, r, http.StatusInternalServerError, err)
+			gofhir.RenderError(w, r, http.StatusInternalServerError, err, "%s", err.Error())
 			return
 		}
 
@@ -79,15 +78,13 @@ func (svc *Service) handleCreate() http.HandlerFunc {
 			HTTPStatusCode: http.StatusOK,
 		}
 
-		// TODO: this is a good example as to why the interceptor calling func should be offloaded
-		// to the service performing the action (in this case responding)
 		for _, interceptor := range svc.ResponseInterceptors {
 			interceptor.OnServerResponse(responseEvent)
 			if interceptorCtx.ShouldAbort {
 				return
 			}
 		}
-		svc.RenderResponse(w, r, resp, http.StatusCreated)
+		svc.RenderResponse(w, r, http.StatusCreated, resp)
 	}
 }
 
@@ -98,18 +95,18 @@ func (svc *Service) handleList() http.HandlerFunc {
 
 		offset, limit, err := extractPaginate(r)
 		if err != nil {
-			gofhir.RenderError(w, r, http.StatusBadRequest, err)
+			gofhir.RenderError(w, r, http.StatusBadRequest, err, "%s", err.Error())
 			return
 		}
 		resp, err := svc.list(ctx, offset, limit)
 		if err != nil {
-			gofhir.RenderError(w, r, http.StatusInternalServerError, err)
+			gofhir.RenderError(w, r, http.StatusInternalServerError, err, "%s", err.Error())
 			return
 		}
 
 		count, err := svc.count(ctx)
 		if err != nil {
-			gofhir.RenderError(w, r, http.StatusInternalServerError, err)
+			gofhir.RenderError(w, r, http.StatusInternalServerError, err, "%s", err.Error())
 			return
 		}
 
@@ -146,14 +143,14 @@ func (svc *Service) handleGet() http.HandlerFunc {
 
 		resp, err := svc.read(ctx, id)
 		if status.Code(err) == codes.NotFound {
-			gofhir.RenderError(w, r, http.StatusNotFound, errors.New("resource not found"))
+			gofhir.RenderError(w, r, http.StatusNotFound, err, "resource not found: %s", err.Error())
 			return
 		} else if err != nil {
-			gofhir.RenderError(w, r, http.StatusInternalServerError, err)
+			gofhir.RenderError(w, r, http.StatusInternalServerError, err, "%s", err.Error())
 			return
 		}
 
-		svc.RenderResponse(w, r, resp, http.StatusOK)
+		svc.RenderResponse(w, r, http.StatusOK, resp)
 	}
 }
 
@@ -170,13 +167,13 @@ func (svc *Service) handleUpdate() http.HandlerFunc {
 			return
 		}
 
-		resp, err := svc.update(ctx, id, data)
+		resp, err := svc.set(ctx, id, data)
 		if err != nil {
 			w.Write([]byte("error creating: " + err.Error()))
 			return
 		}
 
-		svc.RenderResponse(w, r, resp, http.StatusNoContent)
+		svc.RenderResponse(w, r, http.StatusNoContent, resp)
 	}
 }
 
@@ -188,18 +185,18 @@ func (svc *Service) handleDelete() http.HandlerFunc {
 
 		exists, err := svc.exists(ctx, id)
 		if err != nil {
-			gofhir.RenderError(w, r, http.StatusInternalServerError, err)
+			gofhir.RenderError(w, r, http.StatusInternalServerError, err, "%s", err.Error())
 			return
 		}
 
 		if !exists {
-			gofhir.RenderError(w, r, http.StatusNotFound, errors.New("resource not found"))
+			gofhir.RenderError(w, r, http.StatusNotFound, err, "resource not found: %s", err.Error())
 			return
 		}
 
 		err = svc.delete(ctx, id)
 		if err != nil {
-			gofhir.RenderError(w, r, http.StatusInternalServerError, err)
+			gofhir.RenderError(w, r, http.StatusInternalServerError, err, "%s", err.Error())
 			return
 		}
 
