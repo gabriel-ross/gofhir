@@ -18,6 +18,7 @@ import (
 var APPLICATION_URL string
 var PROJECT_ID string
 var PORT string
+var KAFKA_BROKER_ADDRESS string
 
 func main() {
 	var err error
@@ -30,43 +31,44 @@ func main() {
 	if err != nil {
 		log.Println("Failed to create firestore client: ", err)
 	}
-	defer fsClient.Close()
+	kafkaClient := gofhir.NewKafkaWriter(KAFKA_BROKER_ADDRESS)
+	logger, err := gofhir.NewCloudLogger(ctx, PROJECT_ID, "final-demo")
+	if err != nil {
+		log.Println("Failed to create logging client: ", err)
+	}
+
+	defer func() {
+		fsClient.Close()
+		kafkaClient.Close()
+		logger.Close()
+	}()
 
 	// Instantiate interceptors
-	demoInt := &interceptor.DemoInterceptor{
+	benchmarkInterceptor := &interceptor.BenchmarkInterceptor{
 		RequestTime:     map[string]time.Time{},
-		RequestDuration: map[string]int64{},
-		DbQueryTime:     map[string]time.Time{},
-		DbQueryDuration: map[string]int64{},
+		PreDbQueryTime:  map[string]time.Time{},
+		PostDbQueryTime: map[string]time.Time{},
+		ResponseTime:    map[string]time.Time{},
+	}
+	streamingInt := &interceptor.StreamingInterceptor{
+		KafkaWriter: *kafkaClient,
+	}
+	loggingInt := &interceptor.LoggingInterceptor{
+		Logger: logger,
 	}
 
 	// Instantiate services and register interceptors
 	p := patient.New(r, fsClient, APPLICATION_URL+":"+PORT, "patients")
-	p.RegisterInterceptors(demoInt)
-
-	// clClient, err := gofhir.NewCloudLoggerClient(ctx, PROJECT_ID)
-	// if err != nil {
-	// 	log.Fatalf("Failed to create client: %v", err)
-	// 	return
-	// }
-	// defer clClient.Close()
-	// logger := clClient.Logger("default").StandardLogger(logging.Info)
-	// r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	data, _ := ioutil.ReadAll(r.Body)
-	// 	defer r.Body.Close()
-	// 	err = kafkaWriter.WriteMessages(ctx,
-	// 		kafka.Message{
-	// 			Key:   []byte(""),
-	// 			Value: data,
-	// 		},
-	// 	)
-	// 	if err != nil {
-	// 		log.Fatalf("failed to write request to kafka: %v", err)
-	// 	}
-	// })
+	p.RegisterInterceptors(
+		benchmarkInterceptor,
+		streamingInt,
+		loggingInt,
+	)
 
 	log.Println("Starting server on port: " + PORT)
+	logger.Log("Starting server on port: " + PORT)
 	http.ListenAndServe(":"+PORT, r)
+	log.Println("shutting down server...")
 }
 
 func LoadConfigFromEnvironment() {
@@ -74,6 +76,7 @@ func LoadConfigFromEnvironment() {
 	APPLICATION_URL = os.Getenv("APPLICATION_URL")
 	PROJECT_ID = os.Getenv("PROJECT_ID")
 	PORT = os.Getenv("PORT")
+	KAFKA_BROKER_ADDRESS = os.Getenv("KAFKA_BROKER_ADDRESS")
 
 	// Default value if not set
 	if PORT == "" {
