@@ -9,8 +9,7 @@ RUN go mod download
 
 COPY . .
 RUN mkdir -p bin
-RUN go build -o ./bin/server ./cmd/server.go
+RUN go build -o ./bin/gofhir ./cmd/gofhir.go
 
-ENV PORT=8080
 EXPOSE ${PORT}
-CMD ./bin/server
+CMD ./bin/gofhir
