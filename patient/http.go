@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"cloud.google.com/go/firestore"
 	"github.com/gabriel-ross/gofhir"
 	"github.com/gabriel-ross/gofhir/hook"
 	"github.com/go-chi/chi"
@@ -98,7 +99,8 @@ func (svc *Service) handleList() http.HandlerFunc {
 			gofhir.RenderError(w, r, http.StatusBadRequest, err, "%s", err.Error())
 			return
 		}
-		resp, err := svc.list(ctx, offset, limit)
+		// resp, err := svc.list(ctx, offset, limit)
+		resp, err := svc.list(ctx, gofhir.WithOrder("id", firestore.Asc))
 		if err != nil {
 			gofhir.RenderError(w, r, http.StatusInternalServerError, err, "%s", err.Error())
 			return

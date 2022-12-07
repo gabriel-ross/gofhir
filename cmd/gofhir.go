@@ -43,26 +43,21 @@ func main() {
 		logger.Close()
 	}()
 
-	// Instantiate interceptors
-	benchmarkInterceptor := &interceptor.BenchmarkInterceptor{
-		RequestTime:     map[string]time.Time{},
-		PreDbQueryTime:  map[string]time.Time{},
-		PostDbQueryTime: map[string]time.Time{},
-		ResponseTime:    map[string]time.Time{},
-	}
-	streamingInt := &interceptor.StreamingInterceptor{
-		KafkaWriter: *kafkaClient,
-	}
-	loggingInt := &interceptor.LoggingInterceptor{
-		Logger: logger,
-	}
-
 	// Instantiate services and register interceptors
 	p := patient.New(r, fsClient, APPLICATION_URL+":"+PORT, "patients")
 	p.RegisterInterceptors(
-		benchmarkInterceptor,
-		streamingInt,
-		loggingInt,
+		&interceptor.StreamingInterceptor{
+			KafkaWriter: *kafkaClient,
+		},
+		&interceptor.BenchmarkInterceptor{
+			RequestTime:     map[string]time.Time{},
+			PreDbQueryTime:  map[string]time.Time{},
+			PostDbQueryTime: map[string]time.Time{},
+			ResponseTime:    map[string]time.Time{},
+		},
+		&interceptor.LoggingInterceptor{
+			Logger: logger,
+		},
 	)
 
 	log.Println("Starting server on port: " + PORT)

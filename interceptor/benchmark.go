@@ -15,41 +15,36 @@ type BenchmarkInterceptor struct {
 }
 
 func (i *BenchmarkInterceptor) OnRequestReceived(e *hook.RequestEvent) {
-	i.RequestTime[e.RequestID] = e.Timestamp
+	i.RequestTime[e.RequestID] = time.Now()
 }
 
 func (i *BenchmarkInterceptor) OnServerResponse(e *hook.ResponseEvent) {
-	i.ResponseTime[e.RequestID] = e.Timestamp
-
-	if len(i.ResponseTime)%10 == 0 {
-		i.Avg()
-	}
+	i.ResponseTime[e.RequestID] = time.Now()
+	i.Avg()
 }
 
 func (i *BenchmarkInterceptor) BeforeDatabaseQuery(e *hook.DatabaseQueryEvent) {
-	i.PreDbQueryTime[e.RequestID] = e.Timestamp
+	i.PreDbQueryTime[e.RequestID] = time.Now()
 }
 func (i *BenchmarkInterceptor) AfterDatabaseQuery(e *hook.DatabaseQueryEvent) {
-	i.PostDbQueryTime[e.RequestID] = e.Timestamp
+	i.PostDbQueryTime[e.RequestID] = time.Now()
 }
 
 func (i *BenchmarkInterceptor) Avg() {
-	var a int64
+	var a float64
 	for key, val := range i.ResponseTime {
-		a += val.Sub(i.RequestTime[key]).Milliseconds()
+		a += float64(val.Sub(i.RequestTime[key]).Milliseconds())
 	}
-	a = a / int64(len(i.ResponseTime))
-	fmt.Printf("Request-response benchmarks:\nRequest volume: %d\nAverage latency: %d\n\n", len(i.ResponseTime), a)
+	a = a / float64(len(i.ResponseTime))
+	fmt.Printf("Request-response benchmarks:\nRequest volume: %d\nAverage latency: %vms\n", len(i.ResponseTime), a)
 
-	var b int64
+	var b float64
 	for key, val := range i.PostDbQueryTime {
-		b += val.Sub(i.PreDbQueryTime[key]).Milliseconds()
+		b += float64(val.Sub(i.PreDbQueryTime[key]).Milliseconds())
 	}
-	b = b / int64(len(i.PostDbQueryTime))
-	fmt.Printf("Database query benchmarks:\nRequest volume: %d\nAverage latency: %d\n\n", len(i.PostDbQueryTime), b)
-
-	fmt.Printf("Request breakdown:\nDatabase operations: %d%\nBusiness logic & interceptors: %s%\n\n", b/a, (a-b)/a)
-	fmt.Printf("Server throughput over the last 10 requests: %s requests/s\n", (1/a)*1000)
+	b = b / float64(len(i.PostDbQueryTime))
+	fmt.Printf("Database query benchmarks:\nRequest volume: %d\nAverage latency: %vms\n", len(i.PostDbQueryTime), b)
+	fmt.Printf("Average server throughput: %v requests/s\n", (1.00/a)*1000.00)
 
 }
 

@@ -19,9 +19,13 @@ func (svc *Service) create(ctx context.Context, data gofhir.Patient) (_ gofhir.P
 	return data, nil
 }
 
-func (svc *Service) list(ctx context.Context, offset, limit int) (_ []gofhir.Patient, err error) {
+func (svc *Service) list(ctx context.Context, options ...gofhir.QueryOption) (_ []gofhir.Patient, err error) {
 	resp := []gofhir.Patient{}
-	iter := svc.db.Collection("patients").OrderBy("id", firestore.Asc).StartAt(offset).Limit(limit).Documents(ctx)
+	query := svc.db.Collection("transactions").Query
+	for _, option := range options {
+		query = option(query)
+	}
+	iter := query.Documents(ctx)
 	for {
 		dsnap, err := iter.Next()
 		if err == iterator.Done {

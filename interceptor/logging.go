@@ -13,7 +13,7 @@ type LoggingInterceptor struct {
 }
 
 func (i *LoggingInterceptor) OnRequestReceived(e *hook.RequestEvent) {
-	entry := fmt.Sprintf("RequestID: %s\nReceived at: %v\nRequestor: %s", e.RequestID, e.Timestamp, e.Request.RemoteAddr)
+	entry := fmt.Sprintf("Logging interceptor: RequestID: %s\nReceived at: %v\nRequestor: %s", e.RequestID, e.Timestamp, e.Request.RemoteAddr)
 	i.Logger.Log(entry)
 	log.Println(entry)
 }
